@@ -12,4 +12,6 @@
 
 ## I also plan to test the effect of rho on the performence under global prunning setting. 
 
-## Do analysis following your thought if you have. You could also do some testing for global prunning setting if you would like.
+## if you have any idea for analysis, just do it as you think.  We can share the experimental/analysis setting and results in slack or here in time. 
+
+## If you have no idea for analysis, you could also do some testing for global-wise prunning setting if you would like.
