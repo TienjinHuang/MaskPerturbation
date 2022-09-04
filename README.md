@@ -9,7 +9,7 @@
 
 # Experiments
 
-## I am doing experiments on CIFAR-10 and RN-18 for exploring the effect of rho on the performence with varying sparsity.
+## I am doing experiments on CIFAR-10 with RN-18 for exploring the effect of rho on the performence with varying sparsity.
 
 ## I also plan to test the effect of rho on the performence under global prunning setting. 
 
