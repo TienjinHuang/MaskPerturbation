@@ -17,13 +17,16 @@ def percentile(t, q):
     
 class GetSubnet(torch.autograd.Function):
     @staticmethod
-    def forward(ctx, scores, zeros, ones, sparsity):
-        k_val = percentile(scores, sparsity*100)
+    def forward(ctx, scores, zeros, ones, sparsity,global_prune=False):
+        if global_prune:
+            k_val=sparsity
+        else:
+            k_val = percentile(scores, sparsity*100)
         return torch.where(scores < k_val, zeros.to(scores.device), ones.to(scores.device))
 
     @staticmethod
     def backward(ctx, g):
-        return g, None, None, None
+        return g, None, None, None,None
 
 
 # Not learning weights, finding subnet
@@ -38,15 +41,23 @@ class SubnetConv(nn.Conv2d):
         self.weight_ones = torch.ones(self.scores.size())
         self.weight_zeros.requires_grad = False
         self.weight_ones.requires_grad = False
+        self.global_prune=False
+        self.global_threshold=None
 
     def set_prune_rate(self, prune_rate):
         self.prune_rate = prune_rate
-
+    def set_gloabl_prune(self):
+        self.global_prune=True
+    def set_global_threshold(self,threshold):
+        self.global_threshold=threshold
     @property
     def clamped_scores(self):
         return self.scores.abs()
     def forward(self, x):
-        subnet = GetSubnet.apply(self.clamped_scores,self.weight_zeros,self.weight_ones, self.prune_rate)
+        if self.global_prune:
+            subnet = GetSubnet.apply(self.clamped_scores,self.weight_zeros,self.weight_ones, self.global_threshold,self.global_prune)
+        else:
+            subnet = GetSubnet.apply(self.clamped_scores,self.weight_zeros,self.weight_ones, self.prune_rate,self.global_prune)
         w = self.weight * subnet
         x = F.conv2d(
             x, w, self.bias, self.stride, self.padding, self.dilation, self.groups

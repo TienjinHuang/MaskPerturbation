@@ -88,6 +88,19 @@ def set_model_prune_rate(model, prune_rate):
             m.set_prune_rate(prune_rate)
             print(f"==> Setting prune rate of {n} to {prune_rate}")
 
+def set_model_global_prune(model):
+    print(f"==> Setting gloabl_prune as True")
+
+    for n, m in model.named_modules():
+        if hasattr(m, "set_gloabl_prune"):
+            m.set_gloabl_prune()
+            #print(f"==> Setting prune rate of {n} to {prune_rate}")
+def set_model_global_threshold(model,threshold):
+    #print(f"==> Setting gloabl_prune threshold of network to {threshold}")
+    for n, m in model.named_modules():
+        if hasattr(m, "set_global_threshold"):
+            m.set_global_threshold(threshold)
+            #print(f"==> Setting prune rate of {n} to {prune_rate}")
 
 def accumulate(model, f):
     acc = 0.0

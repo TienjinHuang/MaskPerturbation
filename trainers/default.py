@@ -4,21 +4,38 @@ import tqdm
 
 from utils.eval_utils import accuracy
 from utils.logging import AverageMeter, ProgressMeter
-
+from utils.net_utils import (
+    set_model_prune_rate,
+    freeze_model_weights,
+    save_checkpoint,
+    get_lr,
+    LabelSmoothing,
+    set_model_global_prune,
+    set_model_global_threshold
+)
 
 __all__ = ["train", "validate", "modifier"]
 
 def percentile(t, q):
     k = 1 + round(.01 * float(q) * (t.numel() - 1))
     return t.view(-1).kthvalue(k).values.item()
-def get_mask(sparsity,model):
-        local=[]
-        for name, p in model.named_parameters():
-            if hasattr(p, 'is_score') and p.is_score:
-                threshold=percentile(p,sparsity*100)
-                mask=p.detach()<threshold
-                local.append(mask.detach().flatten())
-        local=torch.cat(local)
+def get_mask(sparsity,model,args,threshold=None):
+        if args.global_prune:
+            local=[]
+            for name, p in model.named_parameters():
+                if hasattr(p, 'is_score') and p.is_score:
+                    #threshold=percentile(p,sparsity*100)
+                    mask=p.detach()<threshold
+                    local.append(mask.detach().flatten())
+            local=torch.cat(local)
+        else:
+            local=[]
+            for name, p in model.named_parameters():
+                if hasattr(p, 'is_score') and p.is_score:
+                    threshold=percentile(p,sparsity*100)
+                    mask=p.detach()<threshold
+                    local.append(mask.detach().flatten())
+            local=torch.cat(local)
 
         
         """
@@ -35,6 +52,15 @@ def get_mask(sparsity,model):
         print("total remove",total_re/total_n)
         """
         return local  
+def get_threshold(model,sparsity):
+    local=[]
+    for name, p in model.named_parameters():
+        if hasattr(p, 'is_score') and p.is_score:
+            local.append(p.detach().flatten())
+    #print("num of pruning params:",len(local))
+    local=torch.cat(local)
+    threshold=percentile(local,sparsity*100)
+    return threshold   
 
 def train(train_loader, model, criterion, optimizer, epoch, args, writer):
     batch_time = AverageMeter("Time", ":6.3f")
@@ -67,15 +93,25 @@ def train(train_loader, model, criterion, optimizer, epoch, args, writer):
 
         target = target.cuda(args.gpu, non_blocking=True)
 
-        pre_mask=get_mask(args.prune_rate,model)
-
+        threshod=None
+        ##############
+        if args.global_prune:
+            threshod=get_threshold(model,args.prune_rate)
+            set_model_global_threshold(model,threshod)
         # compute output
-        output = model(images)
+        pre_mask=get_mask(args.prune_rate,model,args,threshod)
 
+        output = model(images)
+        
         loss = criterion(output, target)
         loss.backward()
         optimizer.first_step(zero_grad=True)
-        after_mask=get_mask(args.prune_rate,model)
+        ##############
+        if args.global_prune:
+            threshod=get_threshold(model,args.prune_rate)
+            set_model_global_threshold(model,threshod)
+
+        after_mask=get_mask(args.prune_rate,model,args,threshod)
         
         loss1=criterion(model(images), target)
         loss1.backward()

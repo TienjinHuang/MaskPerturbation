@@ -20,6 +20,8 @@ from utils.net_utils import (
     save_checkpoint,
     get_lr,
     LabelSmoothing,
+    set_model_global_prune,
+    set_model_global_threshold
 )
 from utils.schedulers import get_policy
 
@@ -314,6 +316,7 @@ def get_model(args):
             raise ValueError("Need to set a positive prune rate")
 
         set_model_prune_rate(model, prune_rate=args.prune_rate)
+        set_model_global_prune(model)
         print(
             f"=> Rough estimate model params {sum(int(p.numel() * (1-args.prune_rate)) for n, p in model.named_parameters() if not n.endswith('scores'))}"
         )

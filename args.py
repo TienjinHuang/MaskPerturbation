@@ -215,7 +215,7 @@ def parse_arguments():
         help="Sample Baseline Subnet Init",
     )
     parser.add_argument("--rho", default=2.0, type=float, help="Rho parameter for SAM.")
-
+    parser.add_argument("--global_prune", action="store_true", help="global prune")
     args = parser.parse_args()
 
     # Allow for use from notebook without config file

@@ -9,12 +9,12 @@
 #SBATCH -o RN18_maskp_varyrho_01sparsity.out
 
 source /home/sliu/miniconda3/etc/profile.d/conda.sh
-source activate TJ
+#source activate TJ
 
 cd ..
 pwd
 
-for rho in 0.1 1 5 10 15
+for rho in 0.1 
 do
-python main.py --config configs/smallscale/resnet18/resnet18-kn-unsigned.yaml --multigpu 0  --data dataset --prune-rate 0.1 --rho $rho --print-freq 400
+python main.py --config configs/smallscale/resnet18/resnet18-kn-unsigned.yaml --multigpu 0  --data dataset --prune-rate 0.1 --rho $rho --global_prune 
 done
